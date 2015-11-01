@@ -15,7 +15,6 @@ public class FrameMain extends javax.swing.JFrame {
     public FrameMain() {
         initComponents();
         setStatus(Status.NEW);
-        managerStatus();
     }
 
     /**
@@ -65,6 +64,11 @@ public class FrameMain extends javax.swing.JFrame {
         btnDelete.setText("Excluir");
 
         btnSave.setText("Salvar");
+        btnSave.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                btnSaveActionPerformed(evt);
+            }
+        });
 
         btnUpdate.setText("Editar");
 
@@ -144,6 +148,12 @@ public class FrameMain extends javax.swing.JFrame {
         setLocationRelativeTo(null);
     }// </editor-fold>//GEN-END:initComponents
 
+    private void btnSaveActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnSaveActionPerformed
+        onSave();
+        save();
+        setStatus(Status.NEW);
+    }//GEN-LAST:event_btnSaveActionPerformed
+
     private void managerStatus(){
         switch(this.status){
             case NEW:
@@ -159,13 +169,14 @@ public class FrameMain extends javax.swing.JFrame {
     
     private void setStatus(Status status){
         this.status = status;
+        managerStatus();
     }
     
     private Boolean onSave(){
         if(validateFields()){
             return Boolean.TRUE;
         }else{
-            JOptionPane.showMessageDialog(null, "mensagem", "titulo", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(null, "Campos inválidos.", "titulo", JOptionPane.ERROR_MESSAGE);
             return Boolean.FALSE;
         }
     }
@@ -186,6 +197,10 @@ public class FrameMain extends javax.swing.JFrame {
     // End of variables declaration//GEN-END:variables
 
     private boolean validateFields() {
-        return (txtNome.getText() == null || txtNome.getText().isEmpty());
+        return !(txtNome.getText() == null || txtNome.getText().isEmpty());
+    }
+
+    private void save() {
+//        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 }
