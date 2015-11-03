@@ -1,8 +1,16 @@
 package sgenda;
 
+import java.rmi.NotBoundException;
+import java.rmi.RemoteException;
+import java.rmi.registry.LocateRegistry;
+import java.rmi.registry.Registry;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javax.swing.JOptionPane;
+import rmi.PhoneBookEntry;
+import rmi.PhoneBookServerInterface;
 
 /**
  *
@@ -11,23 +19,37 @@ import javax.swing.JOptionPane;
 public class FrameMain extends javax.swing.JFrame {
 
     private Status status;
-    private final List<PhoneBookEntry> list;
-    private final PhoneTableModel phoneTableModel;
+    private List<PhoneBookEntry> list = new ArrayList<>();
+    private PhoneTableModel phoneTableModel = new PhoneTableModel();
+    private PhoneBookEntry phoneBookEntry;
 
-    /**
-     * Creates new form NewJFrame
-     */
     public FrameMain() {
-        list = new ArrayList<>();
-        list.add(new PhoneBookEntry("nome 1", "sobrenome 1", "77988117750"));
-        list.add(new PhoneBookEntry("nome 2", "sobrenome 2", "77988117750"));
-        list.add(new PhoneBookEntry("nome 3", "sobrenome 3", "77988117750"));
-        list.add(new PhoneBookEntry("nome 4", "sobrenome 4", "77988117750"));
-        phoneTableModel = new PhoneTableModel(list);
+
+        String host = null;//(args.length < 1) ? null : args[0];
+        try {
+            Registry registry = LocateRegistry.getRegistry(host);
+            stub = (PhoneBookServerInterface) registry.lookup("ServerInterface");
+
+            // Simular primeiros itens
+            PhoneBookEntry entry1 = new PhoneBookEntry("Danilo", "Lopes", "88091386");
+            PhoneBookEntry entry2 = new PhoneBookEntry("Danilo2", "Lopes", "88091381");
+            PhoneBookEntry entry3 = new PhoneBookEntry("Danilo3", "Lopes", "88091382");
+
+            stub.addEntry(entry1);
+            stub.addEntry(entry2);
+            stub.addEntry(entry3);
+
+            list = stub.getPhoneBook();
+            phoneTableModel = new PhoneTableModel(list);
+        } catch (RemoteException | NotBoundException e) {
+            System.err.println("Client exception: " + e.toString());
+            e.printStackTrace();
+        }
 
         initComponents();
         setStatus(Status.NEW);
     }
+    private PhoneBookServerInterface stub;
 
     /**
      * This method is called from within the constructor to initialize the form.
@@ -65,6 +87,7 @@ public class FrameMain extends javax.swing.JFrame {
         jLabel3.setText("Telefone");
 
         tblPhones.setModel(phoneTableModel);
+        tblPhones.setSelectionMode(javax.swing.ListSelectionModel.SINGLE_SELECTION);
         jScrollPane1.setViewportView(tblPhones);
         tblPhones.setColumnModel(tblPhones.getColumnModel());
 
@@ -78,8 +101,8 @@ public class FrameMain extends javax.swing.JFrame {
             jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(jPanel1Layout.createSequentialGroup()
                 .addContainerGap()
-                .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 100, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addContainerGap(68, Short.MAX_VALUE))
+                .addComponent(jScrollPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 157, Short.MAX_VALUE)
+                .addContainerGap())
         );
 
         btnDelete.setText("Excluir");
@@ -92,8 +115,18 @@ public class FrameMain extends javax.swing.JFrame {
         });
 
         btnUpdate.setText("Editar");
+        btnUpdate.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                btnUpdateActionPerformed(evt);
+            }
+        });
 
         btnNew.setText("Novo");
+        btnNew.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                btnNewActionPerformed(evt);
+            }
+        });
 
         javax.swing.GroupLayout jPanel2Layout = new javax.swing.GroupLayout(jPanel2);
         jPanel2.setLayout(jPanel2Layout);
@@ -170,20 +203,47 @@ public class FrameMain extends javax.swing.JFrame {
     }// </editor-fold>//GEN-END:initComponents
 
     private void btnSaveActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnSaveActionPerformed
-        onSave();
-        save();
-        setStatus(Status.NEW);
+        if (onSave()) {
+            save(this.phoneBookEntry);
+            setStatus(Status.NEW);
+        }
     }//GEN-LAST:event_btnSaveActionPerformed
+
+    private void btnNewActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnNewActionPerformed
+        this.phoneBookEntry = new PhoneBookEntry();
+        setStatus(Status.UPDATE);
+        clearFields();
+    }//GEN-LAST:event_btnNewActionPerformed
+
+    private void btnUpdateActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnUpdateActionPerformed
+        try {
+            stub.getPhoneBook().get(tblPhones.getSelectedRow());
+            populateFields(this.phoneBookEntry);
+        } catch (RemoteException ex) {
+            Logger.getLogger(FrameMain.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }//GEN-LAST:event_btnUpdateActionPerformed
 
     private void managerStatus() {
         switch (this.status) {
             case NEW:
                 this.btnDelete.setEnabled(false);
                 this.btnUpdate.setEnabled(false);
+                this.btnSave.setEnabled(false);
+                this.txtNome.setEnabled(false);
+                this.txtSobrenome.setEnabled(false);
+                this.fmtTelefone.setEnabled(false);
+                clearFields();
                 break;
             case UPDATE:
+                this.btnSave.setEnabled(true);
+                this.txtNome.setEnabled(true);
+                this.txtSobrenome.setEnabled(true);
+                this.fmtTelefone.setEnabled(true);
                 break;
-            case DELETE:
+            case SELECT:
+                this.btnDelete.setEnabled(true);
+                this.btnUpdate.setEnabled(true);
                 break;
         }
     }
@@ -223,7 +283,29 @@ public class FrameMain extends javax.swing.JFrame {
         return !(txtNome.getText() == null || txtNome.getText().isEmpty());
     }
 
-    private void save() {
-//        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    private void save(PhoneBookEntry phoneBookEntry) {
+        if (phoneBookEntry.getId() == 0) {
+            populateObject(phoneBookEntry);
+            phoneTableModel.addPhoneBookEntry(phoneBookEntry);
+        }
+        clearFields();
     }
+
+    private void populateObject(PhoneBookEntry phoneBookEntry) {
+        phoneBookEntry.setNome(txtNome.getText());
+        phoneBookEntry.setSobrenome(txtSobrenome.getText());
+        phoneBookEntry.setTelefone(fmtTelefone.getText());
+    }
+
+    private void clearFields() {
+        phoneBookEntry = new PhoneBookEntry();
+        populateFields(phoneBookEntry);
+    }
+
+    private void populateFields(PhoneBookEntry phoneBookEntry) {
+        txtNome.setText(phoneBookEntry.getNome());
+        txtSobrenome.setText(phoneBookEntry.getSobrenome());
+        fmtTelefone.setText(phoneBookEntry.getTelefone());
+    }
+
 }

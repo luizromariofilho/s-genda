@@ -1,25 +1,39 @@
-package sgenda;
+package rmi;
 
 /**
  *
- * @author Luiz
+ * @author Danilo
  */
-public class PhoneBookEntry {
+public class PhoneBookEntry  implements java.io.Serializable {
 
+    private int id;
     private String nome;
     private String sobrenome;
     private String telefone;
 
     public PhoneBookEntry() {
     }
-
-    public PhoneBookEntry(String nome, String sobrenome, String telefone) {
+    
+    public PhoneBookEntry(String nome, String sobrenome, String telefone){
         this.nome = nome;
         this.sobrenome = sobrenome;
         this.telefone = telefone;
     }
-
     
+    public PhoneBookEntry(int id, String nome, String sobrenome, String telefone){
+        this.id = id;
+        this.nome = nome;
+        this.sobrenome = sobrenome;
+        this.telefone = telefone;
+    }
+    public int getId() {
+        return id;
+    }
+
+    public void setId(int id) {
+        this.id = id;
+    }
+
     public String getNome() {
         return nome;
     }
@@ -42,6 +56,11 @@ public class PhoneBookEntry {
 
     public void setTelefone(String telefone) {
         this.telefone = telefone;
+    }
+
+    @Override
+    public String toString() {
+        return "PhoneBookEntry{" + "id=" + id + ", nome=" + nome + ", sobrenome=" + sobrenome + ", telefone=" + telefone + '}';
     }
     
     
