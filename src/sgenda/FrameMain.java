@@ -40,19 +40,20 @@ public class FrameMain extends javax.swing.JFrame {
             stub.addEntry(entry2);
             stub.addEntry(entry3);
 
+            initComponents();
+            setStatus(Status.NEW);
+            
             loadTable();
         } catch (RemoteException | NotBoundException e) {
             System.err.println("Client exception: " + e.toString());
             e.printStackTrace();
         }
-
-        initComponents();
-        setStatus(Status.NEW);
     }
 
     private void loadTable() throws RemoteException {
         list = stub.getPhoneBook();
         phoneTableModel = new PhoneTableModel(list);
+        this.tblPhones.setModel(phoneTableModel);
     }
 
     /**
@@ -248,9 +249,11 @@ public class FrameMain extends javax.swing.JFrame {
 
     private void btnDeleteActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnDeleteActionPerformed
         int showConfirmDialog = JOptionPane.showConfirmDialog(null, "Deseja remover o número " + this.phoneBookEntry.getTelefone());
-        if(showConfirmDialog == JOptionPane.YES_OPTION){
+        if (showConfirmDialog == JOptionPane.YES_OPTION) {
             try {
                 stub.deleteEntry(this.phoneBookEntry);
+                loadTable();
+                setStatus(Status.NEW);
             } catch (RemoteException ex) {
                 Logger.getLogger(FrameMain.class.getName()).log(Level.SEVERE, null, ex);
             }
@@ -313,24 +316,22 @@ public class FrameMain extends javax.swing.JFrame {
     // End of variables declaration//GEN-END:variables
 
     private boolean validateFields() {
-        return !(txtNome.getText() == null || txtNome.getText().isEmpty() 
-                || txtSobrenome.getText() == null || txtSobrenome.getText().isEmpty() 
+        return !(txtNome.getText() == null || txtNome.getText().isEmpty()
+                || txtSobrenome.getText() == null || txtSobrenome.getText().isEmpty()
                 || fmtTelefone.getText() == null || fmtTelefone.getText().isEmpty());
     }
 
     private void save(PhoneBookEntry phoneBookEntry) {
-        if (phoneBookEntry.getId() == 0) {
-            populateObject(phoneBookEntry);
-            phoneTableModel.addPhoneBookEntry(phoneBookEntry);
-        } else {
-            try {
-                populateObject(phoneBookEntry);
+        populateObject(phoneBookEntry);
+        try {
+            if (phoneBookEntry.getId() == 0) {
+                stub.addEntry(phoneBookEntry);
+            } else {
                 stub.modifyEntry(phoneBookEntry);
-                phoneTableModel.fireTableDataChanged(); // FIX ME
-                loadTable(); // FIX ME
-            } catch (RemoteException ex) {
-                Logger.getLogger(FrameMain.class.getName()).log(Level.SEVERE, null, ex);
             }
+            loadTable();
+        } catch (RemoteException ex) {
+            Logger.getLogger(FrameMain.class.getName()).log(Level.SEVERE, null, ex);
         }
         setStatus(Status.NEW);
         clearFields();
