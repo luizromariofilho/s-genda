@@ -81,8 +81,8 @@ public class PhoneTableModel extends AbstractTableModel {
         return null;
     }
 
-    public void addPhoneBookEntry(PhoneBookEntry func) {
-        linhas.add(func);
+    public void addPhoneBookEntry(PhoneBookEntry phoneBookEntry) {
+        linhas.add(phoneBookEntry);
         int ultimoIndice = getRowCount() - 1;
         fireTableRowsInserted(ultimoIndice, ultimoIndice);
     }
@@ -94,24 +94,4 @@ public class PhoneTableModel extends AbstractTableModel {
         }
 
     }
-
-    public void addListaDePhoneBookEntrys(List<PhoneBookEntry> funcs) {
-        int tamanhoAntigo = getRowCount();
-        linhas.addAll(funcs);
-        fireTableRowsInserted(tamanhoAntigo, getRowCount() - 1);
-    }
-
-    public void limpar() {
-        linhas.clear();
-        fireTableDataChanged();
-    }
-
-    public boolean isEmpty() {
-        return linhas.isEmpty();
-    }
-
-    public Object getObject(int index) {
-        return linhas.get(index);
-    }
-
 }

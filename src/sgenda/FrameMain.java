@@ -18,6 +18,7 @@ import rmi.PhoneBookServerInterface;
  */
 public class FrameMain extends javax.swing.JFrame {
 
+    private PhoneBookServerInterface stub;
     private Status status;
     private List<PhoneBookEntry> list = new ArrayList<>();
     private PhoneTableModel phoneTableModel = new PhoneTableModel();
@@ -39,8 +40,7 @@ public class FrameMain extends javax.swing.JFrame {
             stub.addEntry(entry2);
             stub.addEntry(entry3);
 
-            list = stub.getPhoneBook();
-            phoneTableModel = new PhoneTableModel(list);
+            loadTable();
         } catch (RemoteException | NotBoundException e) {
             System.err.println("Client exception: " + e.toString());
             e.printStackTrace();
@@ -49,7 +49,11 @@ public class FrameMain extends javax.swing.JFrame {
         initComponents();
         setStatus(Status.NEW);
     }
-    private PhoneBookServerInterface stub;
+
+    private void loadTable() throws RemoteException {
+        list = stub.getPhoneBook();
+        phoneTableModel = new PhoneTableModel(list);
+    }
 
     /**
      * This method is called from within the constructor to initialize the form.
@@ -88,6 +92,11 @@ public class FrameMain extends javax.swing.JFrame {
 
         tblPhones.setModel(phoneTableModel);
         tblPhones.setSelectionMode(javax.swing.ListSelectionModel.SINGLE_SELECTION);
+        tblPhones.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseClicked(java.awt.event.MouseEvent evt) {
+                tblPhonesMouseClicked(evt);
+            }
+        });
         jScrollPane1.setViewportView(tblPhones);
         tblPhones.setColumnModel(tblPhones.getColumnModel());
 
@@ -106,6 +115,11 @@ public class FrameMain extends javax.swing.JFrame {
         );
 
         btnDelete.setText("Excluir");
+        btnDelete.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                btnDeleteActionPerformed(evt);
+            }
+        });
 
         btnSave.setText("Salvar");
         btnSave.addActionListener(new java.awt.event.ActionListener() {
@@ -216,13 +230,32 @@ public class FrameMain extends javax.swing.JFrame {
     }//GEN-LAST:event_btnNewActionPerformed
 
     private void btnUpdateActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnUpdateActionPerformed
+        populateFields(this.phoneBookEntry);
+        this.txtNome.setEnabled(true);
+        this.txtSobrenome.setEnabled(true);
+        this.fmtTelefone.setEnabled(true);
+        this.btnSave.setEnabled(true);
+    }//GEN-LAST:event_btnUpdateActionPerformed
+
+    private void tblPhonesMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_tblPhonesMouseClicked
         try {
-            stub.getPhoneBook().get(tblPhones.getSelectedRow());
-            populateFields(this.phoneBookEntry);
+            setStatus(Status.SELECT);
+            this.phoneBookEntry = stub.getPhoneBook().get(tblPhones.getSelectedRow());
         } catch (RemoteException ex) {
             Logger.getLogger(FrameMain.class.getName()).log(Level.SEVERE, null, ex);
         }
-    }//GEN-LAST:event_btnUpdateActionPerformed
+    }//GEN-LAST:event_tblPhonesMouseClicked
+
+    private void btnDeleteActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnDeleteActionPerformed
+        int showConfirmDialog = JOptionPane.showConfirmDialog(null, "Deseja remover o número " + this.phoneBookEntry.getTelefone());
+        if(showConfirmDialog == JOptionPane.YES_OPTION){
+            try {
+                stub.deleteEntry(this.phoneBookEntry);
+            } catch (RemoteException ex) {
+                Logger.getLogger(FrameMain.class.getName()).log(Level.SEVERE, null, ex);
+            }
+        }
+    }//GEN-LAST:event_btnDeleteActionPerformed
 
     private void managerStatus() {
         switch (this.status) {
@@ -280,14 +313,26 @@ public class FrameMain extends javax.swing.JFrame {
     // End of variables declaration//GEN-END:variables
 
     private boolean validateFields() {
-        return !(txtNome.getText() == null || txtNome.getText().isEmpty());
+        return !(txtNome.getText() == null || txtNome.getText().isEmpty() 
+                || txtSobrenome.getText() == null || txtSobrenome.getText().isEmpty() 
+                || fmtTelefone.getText() == null || fmtTelefone.getText().isEmpty());
     }
 
     private void save(PhoneBookEntry phoneBookEntry) {
         if (phoneBookEntry.getId() == 0) {
             populateObject(phoneBookEntry);
             phoneTableModel.addPhoneBookEntry(phoneBookEntry);
+        } else {
+            try {
+                populateObject(phoneBookEntry);
+                stub.modifyEntry(phoneBookEntry);
+                phoneTableModel.fireTableDataChanged(); // FIX ME
+                loadTable(); // FIX ME
+            } catch (RemoteException ex) {
+                Logger.getLogger(FrameMain.class.getName()).log(Level.SEVERE, null, ex);
+            }
         }
+        setStatus(Status.NEW);
         clearFields();
     }
 
